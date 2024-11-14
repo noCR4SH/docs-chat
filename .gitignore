@@ -157,3 +157,5 @@ cython_debug/
 
 # Misc
 data/
+conversation_history/
+chroma_db

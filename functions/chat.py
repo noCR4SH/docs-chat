@@ -3,7 +3,8 @@ from langchain.schema.messages import HumanMessage, AIMessage, SystemMessage
 import random
 import gradio as gr
 import json
-from prompts import system_prompts
+from prompts import system_prompts, rag_prompts
+from .document_processor import get_relevant_context
 
 llm = ChatOpenAI(model="gpt-4o-mini")
 
@@ -33,6 +34,10 @@ def llm_response(message, history):
                 else:
                     chat_name = msg['content']
                 break
+
+    # Get relevant context from vector store
+    relevant_docs = get_relevant_context(message)
+    context = "\n".join([doc.page_content for doc in relevant_docs])
     
     for msg in history:
         if msg['role'] == 'user':
@@ -42,7 +47,8 @@ def llm_response(message, history):
         elif msg['role'] == "system":
             history_langchain_format.append(SystemMessage(content=msg['content']))
 
-    history_langchain_format.append(HumanMessage(content=message))
+    history_langchain_format.append(HumanMessage(content=rag_prompts.standard_rag_prompt(message, context)))
+
     llm_response = llm.invoke(history_langchain_format)
 
     append_history_to_file(message, "user", f"conversation_history/{chat_name}.json")

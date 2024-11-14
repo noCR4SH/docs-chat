@@ -2,7 +2,7 @@ import gradio as gr
 import os
 
 from functions.chat import llm_response, new_chat
-from functions.files import upload_file
+from functions.files import upload_file, delete_files
 
 if not os.path.exists("data"):
     os.makedirs("data")
@@ -72,13 +72,19 @@ with gr.Blocks(title="DocsChat", theme="soft") as app:
                     gr.Markdown("# Knowledge\nUpload and manage your documents.")
 
                     with gr.Group():
-                        file_uploader = gr.File(label="Upload File")
+                        file_uploader = gr.File(label="Upload File", file_types=[".pdf"])
                         upload_button = gr.Button("Upload")
 
                         upload_button.click(upload_file, file_uploader)
 
                     with gr.Group():
-                        file_explorer = gr.FileExplorer(root_dir="data", label="Uploaded Files")
-                        delete_button = gr.Button("Delete Selected")
+                        delete_button = gr.Button("Delete Selected", variant="primary", render=False)
+
+                        @gr.render(triggers=[app.load, upload_button.click, delete_button.click])
+                        def uploaded_files():
+                            file_explorer = gr.FileExplorer(root_dir="data", label="Uploaded Files")
+
+                            delete_button.click(delete_files, file_explorer)
+                        delete_button.render()
 
 app.launch()
